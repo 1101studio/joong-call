@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>비어홀 전광판 Ver.2.1</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <style>
+        body { margin: 0; background: #000; color: #fff; display: flex; height: 100vh; overflow: hidden; font-family: sans-serif; }
+        #left-area { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; border-right: 3px solid #222; position: relative; }
+        #right-area { width: 35%; background: #0a0a0a; padding: 30px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 20px; }
+        .grid div { background: #1a1a1a; border: 4px solid #ff8c00; border-radius: 20px; font-size: 4rem; font-weight: bold; height: 120px; display: flex; justify-content: center; align-items: center; color: #ffcc00; }
+        #call-num { font-size: 15rem; color: #ffcc00; font-weight: 900; margin: 0; }
+    </style>
+</head>
+<body>
+
+<div class="left" style="flex: 1; position: relative; overflow: hidden;">
+    <div id="monitorBg" style="position: absolute; width: 100%; height: 100%; z-index: 1;"></div>
+    
+    <div id="call-overlay" style="
+        position: absolute; 
+        top: 0; left: 0; 
+        width: 100%; height: 100%; 
+        z-index: 100; 
+        display: none; /* 평소엔 숨김 */
+        flex-direction: column; 
+        justify-content: center; 
+        align-items: center; 
+        background: rgba(0,0,0,0.5); /* 배경 어둡게 해서 글자 강조 */
+    ">
+        </div>
+</div>
+
+<div id="right-area">
+    <h1 style="color: #ff8c00; text-align:center; font-size: 3rem; border-bottom: 3px solid #ff8c00; padding-bottom: 20px;">CALL</h1>
+    <div id="list-grid" class="grid"></div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBS4jwVE4nBifbGpR8rvglOD57JLR8e3kk",
+  authDomain: "joong-663fe.firebaseapp.com",
+  databaseURL: "https://joong-663fe-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "joong-663fe",
+  storageBucket: "joong-663fe.firebasestorage.app",
+  messagingSenderId: "354782482518",
+  appId: "1:354782482518:web:6bf180bbd669349c2a2bf7"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 2번 요청: 전광판 목록 실시간 반영
+    db.ref('history').on('value', (snapshot) => {
+        const history = snapshot.val() || [];
+        const grid = document.getElementById('list-grid');
+        grid.innerHTML = history.map(num => `<div>${num}</div>`).join('');
+    });
+
+let callTimer = null;
+
+// Firebase 실시간 감시
+db.ref('currentCall').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if(!data) return;
+
+    const overlay = document.getElementById('call-overlay');
+    
+    // 1. 메시지 내용 삽입 및 표시
+    overlay.innerHTML = `
+        <div style="text-align: center; color: white; text-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            <div style="font-size: 150px; font-weight: 900; color: #ffcc00; line-height: 1.2;">${data.number}번</div>
+            <div style="font-size: 60px; font-weight: bold; margin-top: 20px;">고객님 메뉴 준비되었습니다</div>
+        </div>
+    `;
+    overlay.style.display = "flex"; // 화면에 보이게 함
+
+    // 2. 7초 유지 후 사라지게 하기
+    if (callTimer) clearTimeout(callTimer); // 이전 타이머가 있다면 초기화
+    
+    callTimer = setTimeout(() => {
+        overlay.style.display = "none"; // 7초 후 레이어 숨김
+        console.log("7초 완료: 메시지 숨김");
+    }, 7000); 
+});
+</script>
+</body>
+</html>

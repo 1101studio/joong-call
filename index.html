@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>[비어 홀 중] 시스템 선택</title>
+    <style>
+        :root {
+            --main-orange: #ff8c00;
+            --dark-brown: #5d4037;
+            --bg-color: #fff5eb;
+        }
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            margin: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 50px 40px;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 {
+            color: var(--main-orange);
+            font-size: 32px;
+            margin-bottom: 40px;
+            font-weight: 900;
+        }
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .select-btn {
+            padding: 25px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: block;
+        }
+        .select-btn:active {
+            transform: scale(0.96);
+        }
+        .admin {
+            background-color: var(--main-orange);
+            box-shadow: 0 8px 0 #d35400;
+        }
+        .monitor {
+            background-color: var(--dark-brown);
+            box-shadow: 0 8px 0 #3e2723;
+        }
+        .info-text {
+            margin-top: 30px;
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>비어 홀 중<br>시스템 선택</h1>
+    
+    <div class="btn-group">
+        <a href="https://iridescent-faun-a19dbf.netlify.app/joong-ver2-admin.html" class="select-btn admin">
+            📱 관리자 페이지
+        </a>
+        <a href="https://iridescent-faun-a19dbf.netlify.app/joong-ver2-monitor.html" class="select-btn monitor">
+            🖥 전광판 페이지
+        </a>
+    </div>
+
+    <p class="info-text">원하시는 모드를 선택해 주세요.</p>
+</div>
+
+</body>
+</html>

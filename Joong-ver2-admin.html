@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>비어홀 관리자 Ver.2.1</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --main-orange: #ff8c00; }
+        body { font-family: sans-serif; background: #fff5eb; padding: 20px; text-align: center; margin: 0; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input[type="number"] { width: 180px; padding: 15px; font-size: 35px; border-radius: 12px; border: 3px solid #ffcc80; text-align: center; outline: none; }
+        .btn-call { padding: 15px 40px; background: var(--main-orange); color: white; border: none; border-radius: 12px; font-weight: bold; font-size: 22px; cursor: pointer; vertical-align: top; margin-left: 5px; }
+        .history-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px; }
+        .history-item { background: white; border: 2px solid #ffcc80; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 20px; color: #d35400; cursor: pointer; }
+        #audio-gate { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div id="audio-gate" onclick="initAudio()">
+    <h1>🍺 시스템 연결 완료</h1>
+    <p>터치하면 소리가 활성화됩니다</p>
+</div>
+<nav class="navbar" style="background: #ff8c00; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; color: white;">
+    <div style="display: flex; gap: 20px;">
+        <div onclick="showPage('home')" style="cursor:pointer; font-weight:bold;">홈</div>
+        <div onclick="showPage('settings')" style="cursor:pointer; font-weight:bold;">설정</div>
+    </div>
+
+</nav>
+
+<div id="page-home" class="page" style="display:none; padding: 40px; >
+    <h2 id="display-store-name">[비어 홀 중]</h2>
+    <input type="number" id="orderNum" placeholder="0000" inputmode="numeric" onkeydown="if(event.key==='Enter') sendCall()">
+    <button class="btn-call" onclick="sendCall()">호출</button>
+</div>
+
+<div id="page-settings" class="page" style="display:none; padding: 40px;">
+    <div style="background:white; padding:30px; border-radius:20px; max-width:600px; margin: 0 auto;">
+        <h3>프로필 관리</h3>
+        <div style="margin-bottom: 20px;">
+            <select id="profile-select" style="padding:10px; width:150px;"></select>
+            <button onclick="saveProfile()" style="padding:10px 20px; background:#ff8c00; color:white; border:none; border-radius:5px;">저장</button>
+            <button onclick="loadProfile()" style="padding:10px 20px; background:#eee; border:none; border-radius:5px;">불러오기</button>
+        </div>
+        <hr>
+        <h3>가게 설정</h3>
+        <input type="text" id="store-name-input" placeholder="가게 이름 입력" style="padding:10px; width:200px;">
+        <button onclick="applyStoreName()" style="padding:10px 20px; background:#5d4037; color:white; border:none; border-radius:5px;">적용</button>
+    </div>
+</div>
+
+<h3>준비 완료 목록</h3>
+<div id="adminHistory" class="history-grid"></div>
+
+<script>
+    // ⚠️ 본인의 Firebase 설정을 그대로 유지하세요
+const firebaseConfig = {
+  apiKey: "AIzaSyBS4jwVE4nBifbGpR8rvglOD57JLR8e3kk",
+  authDomain: "joong-663fe.firebaseapp.com",
+  databaseURL: "https://joong-663fe-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "joong-663fe",
+  storageBucket: "joong-663fe.firebasestorage.app",
+  messagingSenderId: "354782482518",
+  appId: "1:354782482518:web:6bf180bbd669349c2a2bf7"
+};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let audioEnabled = false;
+
+    function initAudio() {
+        audioEnabled = true;
+        document.getElementById('audio-gate').remove();
+        // 브라우저 오디오 깨우기
+        const silent = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+        silent.play().catch(()=>{});
+    }
+
+
+
+// 페이지 전환 함수
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+    document.getElementById('page-' + pageId).style.display = 'block';
+}
+
+// 프로필 드롭다운 초기화 (1~5)
+const profileDropdown = document.getElementById('profile-select');
+let profileNames = JSON.parse(localStorage.getItem('beer_profile_names')) || {};
+for(let i=1; i<=5; i++) {
+    let opt = document.createElement('option');
+    opt.value = i;
+    opt.innerText = profileNames[i] || `프로필 ${i}`;
+    profileDropdown.appendChild(opt);
+}
+
+// 가게 이름 적용 (메인화면 UI만 변경)
+function applyStoreName() {
+    const newName = document.getElementById('store-name-input').value;
+    if(newName) {
+        document.getElementById('display-store-name').innerText = `[${newName}]`;
+    }
+}
+
+// 프로필 저장 (가게이름, 볼륨, 성별 등 전체 저장)
+function saveProfile() {
+    const idx = profileDropdown.value;
+    const storeName = document.getElementById('display-store-name').innerText.replace(/[\[\]]/g, '');
+    const volume = document.getElementById('volume-range').value;
+
+    const config = { storeName, volume, voice };
+    localStorage.setItem(`beer_config_${idx}`, JSON.stringify(config));
+    
+    // 드롭다운 이름 변경 및 저장
+    profileNames[idx] = storeName;
+    localStorage.setItem('beer_profile_names', JSON.stringify(profileNames));
+    profileDropdown.options[idx-1].innerText = storeName;
+    
+    // Firebase 전용 (모니터 이름 동기화)
+    db.ref('settings/storeName').set(storeName);
+    
+    alert(`${idx}번 프로필에 저장되었습니다.`);
+}
+
+// 프로필 불러오기
+function loadProfile() {
+    const idx = profileDropdown.value;
+    const data = JSON.parse(localStorage.getItem(`beer_config_${idx}`));
+    if(!data) return alert("저장된 데이터가 없습니다.");
+
+    document.getElementById('display-store-name').innerText = `[${data.storeName}]`;
+    document.getElementById('volume-range').value = data.volume;
+    document.getElementById('voice-select').value = data.voice;
+    db.ref('settings/storeName').set(data.storeName);
+    alert("설정을 불러왔습니다.");
+}
+
+// 호출 시 관리자 기기에서 소리 재생 (수정된 부분)
+
+
+    // 2번 요청: 준비 완료 목록 실시간 동기화
+    db.ref('history').on('value', (snapshot) => {
+        const history = snapshot.val() || [];
+        const container = document.getElementById('adminHistory');
+        container.innerHTML = "";
+        history.forEach((num, idx) => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerText = num;
+            div.onclick = () => removeHistory(idx); // 클릭 시 삭제 기능
+            container.appendChild(div);
+        });
+    });
+
+    async function sendCall() {
+        const input = document.getElementById('orderNum');
+        const num = input.value;
+        if(!num) return;
+
+        // 1. Firebase 전송 (현재 호출 번호)
+        db.ref('currentCall').set({ number: num, timestamp: Date.now() });
+
+        // 2. 히스토리 목록 업데이트 (상위 16개 유지)
+        db.ref('history').once('value', (snapshot) => {
+            let history = snapshot.val() || [];
+            history.unshift(num);
+            if(history.length > 16) history.pop();
+            db.ref('history').set(history);
+        });
+
+        // 3번 요청: 관리자 쪽에서 TTS 및 소리 재생
+        if(audioEnabled) {
+            playCallAudio(num);
+        }
+
+        input.value = "";
+        input.focus();
+    }
+
+    function removeHistory(index) {
+        db.ref('history').once('value', (snapshot) => {
+            let history = snapshot.val() || [];
+            history.splice(index, 1);
+            db.ref('history').set(history);
+        });
+    }
+
+    function playCallAudio(num) {
+        // 알림음
+        new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
+        
+        // TTS
+        const text = `${num.split('').join(' ')} 번 손님 메뉴가 나왔습니다.`;
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voices = window.speechSynthesis.getVoices();
+        const female = voices.find(v => v.lang === 'ko-KR' && (v.name.includes('여성') || v.name.includes('Google') || v.name.includes('Female')));
+        if(female) utterance.voice = female;
+        utterance.lang = 'ko-KR';
+        setTimeout(() => window.speechSynthesis.speak(utterance), 600);
+    }
+</script>
+</body>
+</html>

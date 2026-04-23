@@ -28,7 +28,7 @@
     <h2 style="color:#5d4037;">관리자 인증</h2>
     <input type="password" id="admin-pass" placeholder="숫자 4자리" maxlength="4" 
            style="width:150px; padding:15px; font-size:24px; text-align:center; border:2px solid #ff8c00; border-radius:10px; margin-bottom:20px;"
-           inputmode="numeric" onkeydown="if(event.key==='Enter') checkPass()">
+           inputmode="numeric" onkeyup="if(event.key==='Enter') checkPass()">
     <button onclick="checkPass()" style="padding:15px 40px; background:#ff8c00; color:white; border:none; border-radius:10px; font-weight:bold; font-size:18px;">입장</button>
 </div>
 
@@ -43,7 +43,7 @@
 </nav>
 
 <div id="page-home" class="page" style="display:none; padding: 40px; >
-    <h3 id="store-name-display">[비어 홀 중]</h3>
+    <h2 id="store-name-display" >[비어 홀 중]</h2>
     <input type="number" id="orderNum" placeholder="0000" inputmode="numeric" onkeydown="if(event.key==='Enter') sendCall()">
     <button class="btn-call" onclick="sendCall()">호출</button>
 </div>

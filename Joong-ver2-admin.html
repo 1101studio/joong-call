@@ -199,10 +199,8 @@ function loadProfile() {
 
     function playCallAudio(num) {
         // 알림음
-        //new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
-//오디오 컨텍스트
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
+        new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
+  
         // TTS
         const text = `${num.split('').join(' ')} 번 손님 메뉴가 나왔습니다.`;
         const utterance = new SpeechSynthesisUtterance(text);
@@ -210,9 +208,6 @@ function loadProfile() {
         const female = voices.find(v => v.lang === 'ko-KR' && (v.name.includes('여성') || v.name.includes('Google') || v.name.includes('Female')));
         if(female) utterance.voice = female;
         utterance.lang = 'ko-KR';
-        //속성
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
         setTimeout(() => window.speechSynthesis.speak(utterance), 600);
     }
     // 암호 확인 함수
